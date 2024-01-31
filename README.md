@@ -25,4 +25,4 @@ https://aisstream.io/coverage
 https://aisstream.io/documentation
 
 Changes:
-- v0.1, First working version
+- v0.1.0, First working version

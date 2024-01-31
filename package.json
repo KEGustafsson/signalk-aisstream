@@ -1,6 +1,6 @@
 {
   "name": "signalk-aisstream",
-  "version": "0.1",
+  "version": "0.1.0",
   "description": "Track the worlds vessels (AIS) via websocket. Easy to configure and use.",
   "main": "index.js",
   "scripts": {
