@@ -26,7 +26,7 @@ module.exports = function createPlugin(app) {
   const plugin = {};
   plugin.id = 'signalk-aisstream';
   plugin.name = 'SignalK AisStream';
-  plugin.description = 'AIS information is gathered from aisstream.io source';
+  plugin.description = 'Track the worlds vessels (AIS) via websocket. Easy to configure and use.';
 
   var unsubscribes = [];
   var utils = require('nmea0183-utilities');
