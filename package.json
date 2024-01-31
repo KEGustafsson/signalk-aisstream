@@ -1,0 +1,21 @@
+{
+  "name": "signalk-aisstream",
+  "version": "0.1",
+  "description": "Track the worlds vessels (AIS) via websocket. Easy to configure and use.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "signalk-node-server-plugin",
+    "signalk-category-ais"
+  ],
+  "repository": "https://github.com/KEGustafsson/signalk-aisstream",
+  "author": "Karl-Erik Gustafsson",
+  "license": "MIT",
+  "dependencies": {
+    "geolib": "^3.3.4",
+    "haversine-distance": "^1.2.1",
+    "nmea0183-utilities": "^0.3.3"
+  }
+}
