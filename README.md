@@ -1,8 +1,9 @@
 # signalk-aisstream
 [![npm version](https://badge.fury.io/js/signalk-aisstream.svg)](https://badge.fury.io/js/signalk-aisstream)
 
-SignalK plugin to track the worlds vessels via websocket. Easy to configure and use.
-Using data source from https://aisstream.io/
+SignalK plugin to track the worlds vessels via websocket.
+- Easy to configure and use.
+- Using data source from https://aisstream.io/
 
 ## Steps to take plugin in use
 1) Create account: https://aisstream.io/authenticate
