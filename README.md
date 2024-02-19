@@ -26,4 +26,5 @@ https://aisstream.io/documentation
 
 Changes:
 - v0.1.0, First working version
-- v0.2.0, Socket reconnection fixed 
+- v0.2.0, Socket reconnection fixed
+- v0.3.0, WebSocket dependency added
