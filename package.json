@@ -16,6 +16,7 @@
   "dependencies": {
     "geolib": "^3.3.4",
     "haversine-distance": "^1.2.1",
-    "nmea0183-utilities": "^0.3.3"
+    "nmea0183-utilities": "^0.3.3",
+    "ws": "^8.16.0"
   }
 }
