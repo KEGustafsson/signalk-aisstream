@@ -54,8 +54,8 @@ module.exports = function createPlugin(app) {
     /*
     if (options.singleSlotBinaryMessage) { messageTypes.push("SingleSlotBinaryMessage"); }
     if (options.multiSlotBinaryMessage) { messageTypes.push("MultiSlotBinaryMessage"); }
-    if (options.aidsToNavigationReport) { messageTypes.push("AidsToNavigationReport"); }
     */
+    if (options.aidsToNavigationReport) { messageTypes.push("AidsToNavigationReport"); }
 
     const startAisStream = () => {
       socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
@@ -178,6 +178,7 @@ module.exports = function createPlugin(app) {
     const sendToSK = (data) => {
       app.debug("------------------------------------------------------------");
       app.debug('\x1b[34m%s\x1b[0m', JSON.stringify(data, null, 2));
+      preContext = 'vessels.urn:mrn:imo:mmsi:';
       const mmsi = data.MetaData.MMSI;
       const longitude = data.MetaData.longitude;
       const latitude = data.MetaData.latitude;
@@ -187,7 +188,13 @@ module.exports = function createPlugin(app) {
       const heading = data.Message?.PositionReport?.TrueHeading ?? data.Message?.StandardClassBPositionReport?.TrueHeading ?? data.Message?.ExtendedClassBPositionReport?.TrueHeading;
       const time_utc = data.MetaData.time_utc;
       const navigationalStatus = data.Message?.PositionReport?.NavigationalStatus ?? data.Message?.StandardClassBPositionReport?.NavigationalStatus ?? data.Message?.ExtendedClassBPositionReport?.NavigationalStatus;
-      const shipName = data.MetaData.ShipName;
+      let shipName;
+      if (data.Message.AidsToNavigationReport) {
+        shipName = data.Message.AidsToNavigationReport.Name;
+        preContext = 'aton.urn:mrn:imo:mmsi:';
+      } else {
+        shipName = data.MetaData.ShipName;
+      }
       const shipType = data.Message?.ShipStaticData?.Type;
       const destination = data.Message?.ShipStaticData?.Destination ?? data.Message?.StaticDataReport?.ReportB?.Destination;
       const imoNumber = data.Message?.ShipStaticData?.ImoNumber;
@@ -315,14 +322,16 @@ module.exports = function createPlugin(app) {
           value: beam,
         })
       }
-      values.push({
-        path: 'sensors.ais.class',
-        value: aisClass,
-      })
-
+      if (!data.Message.AidsToNavigationReport) {
+        values.push({
+          path: 'sensors.ais.class',
+          value: aisClass,
+        })  
+      }
+      
       if (data.MetaData.MMSI) {
         const deltaUpdate = {
-          context: 'vessels.urn:mrn:imo:mmsi:' + data.MetaData.MMSI,
+          context: preContext + data.MetaData.MMSI,
           updates: [
             {
               source: { label: plugin.id },
@@ -448,12 +457,12 @@ module.exports = function createPlugin(app) {
         default: true,
         title: 'MultiSlotBinaryMessage',
       },
+      */
       aidsToNavigationReport: {
         type: 'boolean',
         default: true,
         title: 'AidsToNavigationReport',
       },
-      */
     },
   };
 
