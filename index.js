@@ -238,6 +238,12 @@ module.exports = function createPlugin(app) {
           value: utils.transform(cog, 'deg', 'rad'),
         })
       }
+      if (cog) {
+        values.push({
+          path: 'navigation.courseOverGroundMagnetic',
+          value: utils.transform(cog, 'deg', 'rad'),
+        })
+      }
       if (sog) {
         values.push({
           path: 'navigation.speedOverGround',
