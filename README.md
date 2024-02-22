@@ -29,3 +29,4 @@ Changes:
 - v0.2.0, Socket reconnection fixed
 - v0.3.0, WebSocket dependency added
 - v0.4.0, AtoNs added
+- v0.4.1, context typo fix

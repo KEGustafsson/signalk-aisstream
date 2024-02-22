@@ -191,7 +191,7 @@ module.exports = function createPlugin(app) {
       let shipName;
       if (data.Message.AidsToNavigationReport) {
         shipName = data.Message.AidsToNavigationReport.Name;
-        preContext = 'aton.urn:mrn:imo:mmsi:';
+        preContext = 'atons.urn:mrn:imo:mmsi:';
       } else {
         shipName = data.MetaData.ShipName;
       }
