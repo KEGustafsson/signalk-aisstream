@@ -369,22 +369,24 @@ module.exports = function createPlugin(app) {
         delta.updates.forEach(u => {
           const lon = u.values[0].value.longitude;
           const lat = u.values[0].value.latitude;
-          if (lon && lat && !oldLon && !oldLat && !socket && messageTypes.length > 0) {
-            oldLon = lon;
-            oldLat = lat;
-            boundingBox = geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000);
-            startAisStream();
-          }
-          const distance = haversine({ lat: oldLat, lon: oldLon }, { lat, lon })
-          if (socket && distance > distanceLimit && messageTypes.length > 0 && lon && lat) {
-            boundingBox = geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000);
-            updateAisStream();
-          } else if (!socket && messageTypes.length > 0 && lon && lat) {
-            boundingBox = geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000);
-            resetWatchdog();
-            startAisStream();
-          } else if (messageTypes.length == 0) {
-            app.debug("No need to update AIS stream");
+          if (lon & lat) {
+            if (!oldLon && !oldLat && !socket && messageTypes.length > 0) {
+              oldLon = lon;
+              oldLat = lat;
+              boundingBox = geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000);
+              startAisStream();
+            }
+            const distance = haversine({ lat: oldLat, lon: oldLon }, { lat, lon })
+            if (socket && distance > distanceLimit && messageTypes.length > 0) {
+              boundingBox = geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000);
+              updateAisStream();
+            } else if (!socket && messageTypes.length > 0) {
+              boundingBox = geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000);
+              resetWatchdog();
+              startAisStream();
+            } else if (messageTypes.length == 0) {
+              app.debug("No need to update AIS stream");
+            }
           }
         });
       }
