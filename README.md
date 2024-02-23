@@ -30,3 +30,4 @@ Changes:
 - v0.3.0, WebSocket dependency added
 - v0.4.0, AtoNs added
 - v0.4.1, context typo fix
+- v0.4.2, reconnection improved

@@ -376,10 +376,10 @@ module.exports = function createPlugin(app) {
             startAisStream();
           }
           const distance = haversine({ lat: oldLat, lon: oldLon }, { lat, lon })
-          if (socket && distance > distanceLimit && messageTypes.length > 0) {
+          if (socket && distance > distanceLimit && messageTypes.length > 0 && lon && lat) {
             boundingBox = geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000);
             updateAisStream();
-          } else if (!socket && messageTypes.length > 0) {
+          } else if (!socket && messageTypes.length > 0 && lon && lat) {
             boundingBox = geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000);
             resetWatchdog();
             startAisStream();
