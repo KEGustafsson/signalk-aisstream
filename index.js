@@ -328,7 +328,7 @@ module.exports = function createPlugin(app) {
           value: beam,
         })
       }
-      if (!data.Message.AidsToNavigationReport) {
+      if (!data.Message.AidsToNavigationReport && !data.Message.SingleSlotBinaryMessage && !data.Message.MultiSlotBinaryMessage) {
         values.push({
           path: 'sensors.ais.class',
           value: aisClass,
@@ -367,8 +367,8 @@ module.exports = function createPlugin(app) {
       },
       delta => {
         delta.updates.forEach(u => {
-          const lon = u.values[0].value.longitude;
-          const lat = u.values[0].value.latitude;
+          const lon = u.values[0].value.longitude || null;
+          const lat = u.values[0].value.latitude || null;
           if (lon & lat) {
             if (!oldLon && !oldLat && !socket && messageTypes.length > 0) {
               oldLon = lon;
