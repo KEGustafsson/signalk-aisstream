@@ -1,4 +1,4 @@
-name: SignalK Docker Build 
+name: Release test
 
 on:
   workflow_dispatch:
