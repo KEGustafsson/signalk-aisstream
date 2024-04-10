@@ -18,4 +18,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref }}
+          name: ${{ github.ref }}
+          body_path: ${{steps.github_release.outputs.changelog}}
           token: ${{ secrets.PAT }}
