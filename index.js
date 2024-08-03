@@ -100,10 +100,12 @@ module.exports = function createPlugin(app) {
     function resetWatchdog() {
       clearTimeout(watchdogTimer);
       watchdogTimer = setTimeout(() => {
-        socket.close();
-        socket.terminate();
-        socket = null;
-        app.debug("Watchdog event, websocket connection closed and reconnection will be tried")
+        if (socket) {
+          socket.close();
+          socket.terminate();
+          socket = null;
+          app.debug("Watchdog event, websocket connection closed and reconnection will be tried");
+        }
       }, options.refreshRate * 1000 + 60000);
     }
 
