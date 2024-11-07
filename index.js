@@ -56,6 +56,7 @@ module.exports = function createPlugin(app) {
     if (options.multiSlotBinaryMessage) { messageTypes.push("MultiSlotBinaryMessage"); }
     */
     if (options.aidsToNavigationReport) { messageTypes.push("AidsToNavigationReport"); }
+    if (options.baseStationReport) { messageTypes.push("BaseStationReport"); }
 
     const startAisStream = () => {
       socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
@@ -383,6 +384,11 @@ module.exports = function createPlugin(app) {
             path: 'offPosition',
             value: data.Message.AidsToNavigationReport.OffPosition,
           })
+        } else if (data.Message.BaseStationReport) {
+          values.push({
+            path: 'sensors.ais.class',
+            value: 'BASE',
+          })
         } else {
           values.push({
             path: 'sensors.ais.class',
@@ -526,6 +532,11 @@ module.exports = function createPlugin(app) {
         type: 'boolean',
         default: true,
         title: 'AidsToNavigationReport',
+      },
+      baseStationReport: {
+        type: 'boolean',
+        default: true,
+        title: 'BaseStationReport',
       },
     },
   };
