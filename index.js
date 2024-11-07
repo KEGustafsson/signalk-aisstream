@@ -242,7 +242,7 @@ module.exports = function createPlugin(app) {
       const length = data.Message?.ShipStaticData?.Dimension?.A + data.Message?.ShipStaticData?.Dimension?.B;
       const beam = data.Message?.ShipStaticData?.Dimension?.C + data.Message?.ShipStaticData?.Dimension?.D;
       let aisClass;
-      if (data.Message.PositionReport || data.Message.ShipStaticData || data.Message.StaticDataReport) {
+      if (data.Message.PositionReport || data.Message.ShipStaticData) {
         aisClass = 'A';
       } else if (data.Message.StandardClassBPositionReport || data.Message.ExtendedClassBPositionReport) { 
         aisClass = 'B';
@@ -389,7 +389,7 @@ module.exports = function createPlugin(app) {
             path: 'sensors.ais.class',
             value: 'BASE',
           })
-        } else {
+        } else if (!data.Message.StaticDataReport) {
           values.push({
             path: 'sensors.ais.class',
             value: aisClass,
