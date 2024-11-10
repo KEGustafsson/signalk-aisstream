@@ -31,3 +31,5 @@ Changes:
 - v0.4.0, AtoNs added
 - v0.4.1, context typo fix
 - v0.4.2, reconnection improved
+- v0.4.3, reset socket close
+- v0.5.0, ATON & BASE Station improvements/fixes
