@@ -56,6 +56,7 @@ module.exports = function createPlugin(app) {
     if (options.multiSlotBinaryMessage) { messageTypes.push("MultiSlotBinaryMessage"); }
     */
     if (options.aidsToNavigationReport) { messageTypes.push("AidsToNavigationReport"); }
+    if (options.baseStationReport) { messageTypes.push("BaseStationReport"); }
 
     const startAisStream = () => {
       socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
@@ -177,6 +178,41 @@ module.exports = function createPlugin(app) {
       99: 'Other (no additional information)'
     }
 
+    let aisArray = {
+      0: 'Unspecified',
+      1: 'Reference Point',
+      2: 'RACON',
+      3: 'Fixed Structure',
+      4: 'Spare',
+      5: 'Light',
+      6: 'Light w/Sectors',
+      7: 'Leading Light Front',
+      8: 'Leading Light Rear',
+      9: 'Cardinal N Beacon',
+      10: 'Cardinal E Beacon',
+      11: 'Cardinal S Beacon',
+      12: 'Cardinal W Beacon',
+      13: 'Beacon, Port Hand',
+      14: 'Beacon, Starboard Hand',
+      15: 'Beacon, Preferred Channel Port Hand',
+      16: 'Beacon, Preferred Channel Starboard Hand',
+      17: 'Beacon, Isolated Danger',
+      18: 'Beacon, Safe Water',
+      19: 'Beacon, Special Mark',
+      20: 'Cardinal Mark N',
+      21: 'Cardinal Mark E',
+      22: 'Cardinal Mark S',
+      23: 'Cardinal Mark W',
+      24: 'Port Hand Mark',
+      25: 'Starboard Hand Mark',
+      26: 'Preferred Channel Port Hand',
+      27: 'Preferred Channel Starboard Hand',
+      28: 'Isolated Danger',
+      29: 'Safe Water',
+      30: 'Special Mark',
+      31: 'Light Vessel/Rig'
+    }
+
     const sendToSK = (data) => {
       app.debug("------------------------------------------------------------");
       app.debug('\x1b[34m%s\x1b[0m', JSON.stringify(data, null, 2));
@@ -206,7 +242,7 @@ module.exports = function createPlugin(app) {
       const length = data.Message?.ShipStaticData?.Dimension?.A + data.Message?.ShipStaticData?.Dimension?.B;
       const beam = data.Message?.ShipStaticData?.Dimension?.C + data.Message?.ShipStaticData?.Dimension?.D;
       let aisClass;
-      if (data.Message.PositionReport || data.Message.ShipStaticData || data.Message.StaticDataReport) {
+      if (data.Message.PositionReport || data.Message.ShipStaticData) {
         aisClass = 'A';
       } else if (data.Message.StandardClassBPositionReport || data.Message.ExtendedClassBPositionReport) { 
         aisClass = 'B';
@@ -330,11 +366,35 @@ module.exports = function createPlugin(app) {
           value: beam,
         })
       }
-      if (!data.Message.AidsToNavigationReport && !data.Message.SingleSlotBinaryMessage && !data.Message.MultiSlotBinaryMessage) {
-        values.push({
-          path: 'sensors.ais.class',
-          value: aisClass,
-        })  
+      if (!data.Message.SingleSlotBinaryMessage && !data.Message.MultiSlotBinaryMessage) {
+        if (data.Message.AidsToNavigationReport) {
+          values.push({
+            path: 'sensors.ais.class',
+            value: 'ATON',
+          })
+          values.push({
+            path: 'atonType',
+            value: { id: data.Message.AidsToNavigationReport.Type, name: aisArray[data.Message.AidsToNavigationReport.Type] },
+          })
+          values.push({
+            path: 'virtual',
+            value: data.Message.AidsToNavigationReport.VirtualAtoN,
+          })
+          values.push({
+            path: 'offPosition',
+            value: data.Message.AidsToNavigationReport.OffPosition,
+          })
+        } else if (data.Message.BaseStationReport) {
+          values.push({
+            path: 'sensors.ais.class',
+            value: 'BASE',
+          })
+        } else if (!data.Message.StaticDataReport) {
+          values.push({
+            path: 'sensors.ais.class',
+            value: aisClass,
+          })
+        }
       }
       
       if (data.MetaData.MMSI) {
@@ -472,6 +532,11 @@ module.exports = function createPlugin(app) {
         type: 'boolean',
         default: true,
         title: 'AidsToNavigationReport',
+      },
+      baseStationReport: {
+        type: 'boolean',
+        default: true,
+        title: 'BaseStationReport',
       },
     },
   };
