@@ -431,7 +431,7 @@ module.exports = function createPlugin(app) {
         delta.updates.forEach(u => {
           const lon = u.values[0].value.longitude || null;
           const lat = u.values[0].value.latitude || null;
-          if (lon & lat) {
+          if (lon && lat) {
             if (!oldLon && !oldLat && !socket && messageTypes.length > 0) {
               oldLon = lon;
               oldLat = lat;
