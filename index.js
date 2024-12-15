@@ -28,22 +28,27 @@ module.exports = function createPlugin(app) {
   plugin.name = 'SignalK AisStream';
   plugin.description = 'Track the worlds vessels (AIS) via websocket. Easy to configure and use.';
 
-  var unsubscribes = [];
-  var utils = require('nmea0183-utilities');
+  const utils = require('nmea0183-utilities');
   const haversine = require('haversine-distance');
   const WebSocket = require('ws');
   const geolib = require('geolib');
   const setStatus = app.setPluginStatus || app.setProviderStatus;
-  let oldLon;
-  let oldLat;
-  let boundingBox;
-  let socket;
-  let watchdogTimer;
+  let unsubscribes = [];
+  let oldLon = null;
+  let oldLat = null;
+  let boundingBox = null;
+  let socket = null;
+  let watchdogTimer = null;
+
 
   plugin.start = function (options) {
     app.debug("AisStream Plugin Started");
     resetWatchdog();
-    const distanceLimit = ((options.boundingBoxSize * 1000) * (options.moveRelatedBoundingBox / 100));
+    if (!options.apiKey || !options.boundingBoxSize) {
+      app.error("Missing required options: apiKey and boundingBoxSize are required.");
+      return;
+    }
+    const distanceLimit = (options.boundingBoxSize * 1000) * (options.moveRelatedBoundingBox / 100);
 
     const messageTypes = [];
     if (options.positionReport) { messageTypes.push("PositionReport"); }
@@ -61,7 +66,8 @@ module.exports = function createPlugin(app) {
     const startAisStream = () => {
       socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
       const API_KEY = options.apiKey;
-      socket.addEventListener("open", (_) => {
+
+      socket.addEventListener("open", () => {
         const subscriptionMessage = {
           APIkey: API_KEY,
           BoundingBoxes: [[
@@ -70,18 +76,28 @@ module.exports = function createPlugin(app) {
           ]],
           FilterMessageTypes: messageTypes,
         };
-        app.debug(JSON.stringify(subscriptionMessage));
+        app.debug("Subscription Message: " + JSON.stringify(subscriptionMessage));
         socket.send(JSON.stringify(subscriptionMessage));
       });
+
       socket.addEventListener("error", (event) => {
+        app.error("WebSocket error: " + event.message);
       });
+
       socket.addEventListener("close", (event) => {
+        app.debug("WebSocket closed: " + event.code);
       });
+
       socket.addEventListener("message", (event) => {
-        let aisMessage = JSON.parse(event.data);
-        sendToSK(aisMessage);
-        resetWatchdog();
+        try {
+          const aisMessage = JSON.parse(event.data);
+          sendToSK(aisMessage);
+          resetWatchdog();
+        } catch (error) {
+          app.error("Error parsing message: " + error.message);
+        }
       });
+
     };
 
     const updateAisStream = () => {
@@ -216,10 +232,16 @@ module.exports = function createPlugin(app) {
     const sendToSK = (data) => {
       app.debug("------------------------------------------------------------");
       app.debug('\x1b[34m%s\x1b[0m', JSON.stringify(data, null, 2));
-      preContext = 'vessels.urn:mrn:imo:mmsi:';
-      const mmsi = data.MetaData.MMSI;
-      const longitude = data.MetaData.longitude;
-      const latitude = data.MetaData.latitude;
+
+      const preContext = 'vessels.urn:mrn:imo:mmsi:';
+      const mmsi = data.MetaData?.MMSI;
+      const longitude = data.MetaData?.longitude;
+      const latitude = data.MetaData?.latitude;
+
+      if (!mmsi || !longitude || !latitude) {
+        app.error("Missing required data: MMSI, longitude, or latitude.");
+        return;
+      }
       const cog = data.Message?.PositionReport?.Cog ?? data.Message?.StandardClassBPositionReport?.Cog ?? data.Message?.ExtendedClassBPositionReport?.Cog;
       const sog = data.Message?.PositionReport?.Sog ?? data.Message?.StandardClassBPositionReport?.Sog ?? data.Message?.ExtendedClassBPositionReport?.Sog;
       const rot = data.Message?.PositionReport?.RateOfTurn;
@@ -244,10 +266,10 @@ module.exports = function createPlugin(app) {
       let aisClass;
       if (data.Message.PositionReport || data.Message.ShipStaticData) {
         aisClass = 'A';
-      } else if (data.Message.StandardClassBPositionReport || data.Message.ExtendedClassBPositionReport) { 
+      } else if (data.Message.StandardClassBPositionReport || data.Message.ExtendedClassBPositionReport) {
         aisClass = 'B';
       };
-      const datetime = new Date(time_utc).toISOString().replace(/\.\d{3}Z$/, '.000Z')     
+      const datetime = new Date(time_utc).toISOString().replace(/\.\d{3}Z$/, '.000Z')
       let etaUTC = null;
       if (eta) {
         etaUTC = new Date(time_utc);
@@ -267,7 +289,7 @@ module.exports = function createPlugin(app) {
       if (longitude && latitude) {
         values.push({
           path: 'navigation.position',
-          value:  { longitude, latitude },
+          value: { longitude, latitude },
         })
       }
       if (cog) {
@@ -396,7 +418,7 @@ module.exports = function createPlugin(app) {
           })
         }
       }
-      
+
       if (data.MetaData.MMSI) {
         const deltaUpdate = {
           context: preContext + data.MetaData.MMSI,
@@ -424,13 +446,18 @@ module.exports = function createPlugin(app) {
     app.subscriptionmanager.subscribe(
       localSubscription,
       unsubscribes,
-      subscriptionError => {
-        app.error('Error:' + subscriptionError);
+      (subscriptionError) => {
+        app.error('Subscription Error: ' + subscriptionError);
       },
       delta => {
-        delta.updates.forEach(u => {
-          const lon = u.values[0].value.longitude || null;
-          const lat = u.values[0].value.latitude || null;
+        if (!delta || !delta.updates) {
+          app.error("Invalid delta received.");
+          return;
+        }
+        delta.updates.forEach((u) => {
+          const lon = u.values[0]?.value?.longitude || null;
+          const lat = u.values[0]?.value?.latitude || null;
+
           if (lon && lat) {
             if (!oldLon && !oldLat && !socket && messageTypes.length > 0) {
               oldLon = lon;
@@ -457,9 +484,9 @@ module.exports = function createPlugin(app) {
 
   plugin.stop = function stop() {
     unsubscribes.forEach((f) => f());
-    unsubscribes = [];
+    unsubscribes.length = 0; // Clear the array
     if (socket) {
-      socket.terminate();
+      socket.close(); // Use close instead of terminate for graceful shutdown
     }
     socket = null;
     oldLon = null;
@@ -475,11 +502,13 @@ module.exports = function createPlugin(app) {
         type: 'string',
         default: 'YOUR_API_KEY',
         title: 'API key for aisstream.io',
+        description: 'Enter your API key to access the AIS stream.',
       },
       boundingBoxSize: {
         type: 'integer',
         default: 1,
         title: 'AIS targets bounding box size around the vessel (in km)',
+        description: 'Specify the size of the bounding box in kilometers.',
       },
       moveRelatedBoundingBox: {
         type: 'integer',
