@@ -39,6 +39,9 @@ module.exports = function createPlugin(app) {
   let boundingBox = null;
   let socket = null;
   let watchdogTimer = null;
+  let reconnectTimer = null;
+  let reconnectDelay = 5000;
+  const RECONNECT_MAX = 300000;
 
 
   plugin.start = function (options) {
@@ -63,6 +66,18 @@ module.exports = function createPlugin(app) {
     if (options.aidsToNavigationReport) { messageTypes.push("AidsToNavigationReport"); }
     if (options.baseStationReport) { messageTypes.push("BaseStationReport"); }
 
+    const scheduleReconnect = () => {
+      if (reconnectTimer || !boundingBox || messageTypes.length === 0) return;
+      app.debug(`WebSocket reconnecting in ${reconnectDelay / 1000}s...`);
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        if (!socket && boundingBox && messageTypes.length > 0) {
+          startAisStream();
+        }
+      }, reconnectDelay);
+      reconnectDelay = Math.min(reconnectDelay * 2, RECONNECT_MAX);
+    };
+
     const startAisStream = () => {
       socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
       const API_KEY = options.apiKey;
@@ -82,10 +97,15 @@ module.exports = function createPlugin(app) {
 
       socket.addEventListener("error", (event) => {
         app.error("WebSocket error: " + event.message);
+        // 'close' will fire after 'error'; reconnect is scheduled there
       });
 
       socket.addEventListener("close", (event) => {
-        app.debug("WebSocket closed: " + event.code);
+        app.debug(`WebSocket closed: code=${event.code} wasClean=${event.wasClean} reason=${event.reason || 'none'}`);
+        socket = null;
+        if (!event.wasClean) {
+          scheduleReconnect();
+        }
       });
 
       socket.addEventListener("message", (event) => {
@@ -93,6 +113,7 @@ module.exports = function createPlugin(app) {
           const aisMessage = JSON.parse(event.data);
           sendToSK(aisMessage);
           resetWatchdog();
+          reconnectDelay = 5000; // reset backoff on successful message
         } catch (error) {
           app.error("Error parsing message: " + error.message);
         }
@@ -118,6 +139,9 @@ module.exports = function createPlugin(app) {
       clearTimeout(watchdogTimer);
       watchdogTimer = setTimeout(() => {
         if (socket) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+          reconnectDelay = 5000;
           socket.close();
           socket.terminate();
           socket = null;
@@ -485,6 +509,9 @@ module.exports = function createPlugin(app) {
   plugin.stop = function stop() {
     unsubscribes.forEach((f) => f());
     unsubscribes.length = 0; // Clear the array
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+    reconnectDelay = 5000;
     if (socket) {
       socket.close(); // Use close instead of terminate for graceful shutdown
     }
