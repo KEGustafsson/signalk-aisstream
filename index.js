@@ -67,7 +67,9 @@ module.exports = function createPlugin(app) {
 
     const scheduleReconnect = () => {
       if (reconnectTimer || !boundingBox || messageTypes.length === 0) return;
-      app.debug(`WebSocket reconnecting in ${reconnectDelay / 1000}s...`);
+      const delaySec = reconnectDelay / 1000;
+      app.debug(`WebSocket reconnecting in ${delaySec}s...`);
+      setStatus(`Disconnected - reconnecting in ${delaySec}s`);
       reconnectTimer = setTimeout(() => {
         reconnectTimer = null;
         if (!socket && boundingBox && messageTypes.length > 0) {
@@ -81,6 +83,7 @@ module.exports = function createPlugin(app) {
       socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
       const API_KEY = options.apiKey;
 
+      setStatus("Connecting...");
       const connectTimeout = setTimeout(() => {
         if (socket && socket.readyState === WebSocket.CONNECTING) {
           app.debug("WebSocket connection timeout, retrying...");
@@ -90,6 +93,7 @@ module.exports = function createPlugin(app) {
 
       socket.addEventListener("open", () => {
         clearTimeout(connectTimeout);
+        setStatus("Connected - waiting for AIS data");
         resetWatchdog();
         const subscriptionMessage = {
           APIkey: API_KEY,
@@ -122,7 +126,8 @@ module.exports = function createPlugin(app) {
           const aisMessage = JSON.parse(event.data);
           sendToSK(aisMessage);
           resetWatchdog();
-          reconnectDelay = 5000; // reset backoff on successful message
+          reconnectDelay = 5000;
+          setStatus("Connected");
         } catch (error) {
           app.error("Error parsing message: " + error.message);
         }
