@@ -35,4 +35,5 @@ Changes:
 - v0.5.0, ATON & BASE Station improvements/fixes
 - v0.5.1, typo fix
 - v0.6.0, fix: webSocket, add exponential backoff reconnect
+- v0.6.1, fix: webSocket startup delay and hanging connection timeout
 
