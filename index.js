@@ -80,16 +80,18 @@ module.exports = function createPlugin(app) {
     };
 
     const startAisStream = () => {
-      socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
+      socket = new WebSocket("wss://stream.aisstream.io/v0/stream", {
+        handshakeTimeout: 30000,
+      });
       const API_KEY = options.apiKey;
 
       setStatus("Connecting...");
       const connectTimeout = setTimeout(() => {
         if (socket && socket.readyState === WebSocket.CONNECTING) {
-          app.debug("WebSocket connection timeout, retrying...");
+          app.debug("WebSocket connection timeout (fallback), retrying...");
           socket.terminate();
         }
-      }, 15000);
+      }, 32000);
 
       socket.addEventListener("open", () => {
         clearTimeout(connectTimeout);
