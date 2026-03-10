@@ -502,9 +502,8 @@ module.exports = function createPlugin(app) {
             if (socket && distance > distanceLimit && messageTypes.length > 0) {
               boundingBox = geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000);
               updateAisStream();
-            } else if (!socket && messageTypes.length > 0) {
+            } else if (!socket && !reconnectTimer && messageTypes.length > 0) {
               boundingBox = geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000);
-              resetWatchdog();
               startAisStream();
             } else if (messageTypes.length == 0) {
               app.debug("No need to update AIS stream");
