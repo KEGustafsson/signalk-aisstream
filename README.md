@@ -34,4 +34,5 @@ Changes:
 - v0.4.3, reset socket close
 - v0.5.0, ATON & BASE Station improvements/fixes
 - v0.5.1, typo fix
+- v0.7.0, revert v0.6.x codes
 
