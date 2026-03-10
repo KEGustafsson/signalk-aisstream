@@ -46,7 +46,6 @@ module.exports = function createPlugin(app) {
 
   plugin.start = function (options) {
     app.debug("AisStream Plugin Started");
-    resetWatchdog();
     if (!options.apiKey || !options.boundingBoxSize) {
       app.error("Missing required options: apiKey and boundingBoxSize are required.");
       return;
@@ -82,7 +81,16 @@ module.exports = function createPlugin(app) {
       socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
       const API_KEY = options.apiKey;
 
+      const connectTimeout = setTimeout(() => {
+        if (socket && socket.readyState === WebSocket.CONNECTING) {
+          app.debug("WebSocket connection timeout, retrying...");
+          socket.terminate();
+        }
+      }, 15000);
+
       socket.addEventListener("open", () => {
+        clearTimeout(connectTimeout);
+        resetWatchdog();
         const subscriptionMessage = {
           APIkey: API_KEY,
           BoundingBoxes: [[
@@ -101,6 +109,7 @@ module.exports = function createPlugin(app) {
       });
 
       socket.addEventListener("close", (event) => {
+        clearTimeout(connectTimeout);
         app.debug(`WebSocket closed: code=${event.code} wasClean=${event.wasClean} reason=${event.reason || 'none'}`);
         socket = null;
         if (!event.wasClean) {
