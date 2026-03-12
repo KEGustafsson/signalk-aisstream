@@ -39,11 +39,13 @@ module.exports = function createPlugin(app) {
   let boundingBox = null;
   let socket = null;
   let watchdogTimer = null;
+  let reconnectTimer = null;
+  let reconnectDelay = 5000;
+  const RECONNECT_MAX = 300000;
 
 
   plugin.start = function (options) {
     app.debug("AisStream Plugin Started");
-    resetWatchdog();
     if (!options.apiKey || !options.boundingBoxSize) {
       app.error("Missing required options: apiKey and boundingBoxSize are required.");
       return;
@@ -63,11 +65,38 @@ module.exports = function createPlugin(app) {
     if (options.aidsToNavigationReport) { messageTypes.push("AidsToNavigationReport"); }
     if (options.baseStationReport) { messageTypes.push("BaseStationReport"); }
 
+    const scheduleReconnect = () => {
+      if (reconnectTimer || !boundingBox || messageTypes.length === 0) return;
+      const delaySec = reconnectDelay / 1000;
+      app.debug(`WebSocket reconnecting in ${delaySec}s...`);
+      setStatus(`Disconnected - reconnecting in ${delaySec}s`);
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        if (!socket && boundingBox && messageTypes.length > 0) {
+          startAisStream();
+        }
+      }, reconnectDelay);
+      reconnectDelay = Math.min(reconnectDelay * 2, RECONNECT_MAX);
+    };
+
     const startAisStream = () => {
-      socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
+      socket = new WebSocket("wss://stream.aisstream.io/v0/stream", {
+        handshakeTimeout: 30000,
+      });
       const API_KEY = options.apiKey;
 
+      setStatus("Connecting...");
+      const connectTimeout = setTimeout(() => {
+        if (socket && socket.readyState === WebSocket.CONNECTING) {
+          app.debug("WebSocket connection timeout (fallback), retrying...");
+          socket.terminate();
+        }
+      }, 32000);
+
       socket.addEventListener("open", () => {
+        clearTimeout(connectTimeout);
+        setStatus("Connected - waiting for AIS data");
+        resetWatchdog();
         const subscriptionMessage = {
           APIkey: API_KEY,
           BoundingBoxes: [[
@@ -82,10 +111,16 @@ module.exports = function createPlugin(app) {
 
       socket.addEventListener("error", (event) => {
         app.error("WebSocket error: " + event.message);
+        // 'close' will fire after 'error'; reconnect is scheduled there
       });
 
       socket.addEventListener("close", (event) => {
-        app.debug("WebSocket closed: " + event.code);
+        clearTimeout(connectTimeout);
+        app.debug(`WebSocket closed: code=${event.code} wasClean=${event.wasClean} reason=${event.reason || 'none'}`);
+        socket = null;
+        if (!event.wasClean) {
+          scheduleReconnect();
+        }
       });
 
       socket.addEventListener("message", (event) => {
@@ -93,6 +128,8 @@ module.exports = function createPlugin(app) {
           const aisMessage = JSON.parse(event.data);
           sendToSK(aisMessage);
           resetWatchdog();
+          reconnectDelay = 5000;
+          setStatus("Connected");
         } catch (error) {
           app.error("Error parsing message: " + error.message);
         }
@@ -118,6 +155,9 @@ module.exports = function createPlugin(app) {
       clearTimeout(watchdogTimer);
       watchdogTimer = setTimeout(() => {
         if (socket) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+          reconnectDelay = 5000;
           socket.close();
           socket.terminate();
           socket = null;
@@ -469,9 +509,8 @@ module.exports = function createPlugin(app) {
             if (socket && distance > distanceLimit && messageTypes.length > 0) {
               boundingBox = geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000);
               updateAisStream();
-            } else if (!socket && messageTypes.length > 0) {
+            } else if (!socket && !reconnectTimer && messageTypes.length > 0) {
               boundingBox = geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000);
-              resetWatchdog();
               startAisStream();
             } else if (messageTypes.length == 0) {
               app.debug("No need to update AIS stream");
@@ -485,6 +524,9 @@ module.exports = function createPlugin(app) {
   plugin.stop = function stop() {
     unsubscribes.forEach((f) => f());
     unsubscribes.length = 0; // Clear the array
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+    reconnectDelay = 5000;
     if (socket) {
       socket.close(); // Use close instead of terminate for graceful shutdown
     }
