@@ -36,4 +36,5 @@ Changes:
 - v0.5.1, typo fix
 - v0.6.0, fix: webSocket, add exponential backoff reconnect
 - v0.6.1, fix: webSocket startup delay and hanging connection timeout
+- v0.6.5, new version
 
