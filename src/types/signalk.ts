@@ -54,6 +54,7 @@ export interface SignalKApp {
   error: (msg: string) => void;
   setPluginStatus?: (msg: string) => void;
   setProviderStatus?: (msg: string) => void;
+  getSelfPath?: (path: string) => unknown;
   handleMessage: (pluginId: string, delta: SignalKDelta) => void;
   subscriptionmanager: {
     subscribe: (
