@@ -64,6 +64,7 @@ function createPlugin(app: SignalKApp): SignalKPlugin {
   let oldLat: number | null = null;
   let boundingBox: BoundingBox | null = null;
   let wsManager: WebSocketManager | null = null;
+  let lastPositionCheck = 0;
 
   plugin.start = function (options: PluginOptions): void {
     app.debug('AisStream Plugin Started');
@@ -152,7 +153,17 @@ function createPlugin(app: SignalKApp): SignalKPlugin {
           const lat = u.values[0]?.value?.latitude ?? null;
 
           if (lon !== null && lat !== null) {
-            if (oldLon === null && oldLat === null && wsManager && !wsManager.isConnected && messageTypes.length > 0) {
+            const now = Date.now();
+            const connected = wsManager?.isConnected ?? false;
+
+            // Before initial connection: process immediately
+            // After connected: throttle to refreshRate
+            if (connected && now - lastPositionCheck < options.refreshRate * 1000) {
+              return;
+            }
+            lastPositionCheck = now;
+
+            if (oldLon === null && oldLat === null && wsManager && !connected && messageTypes.length > 0) {
               oldLon = lon;
               oldLat = lat;
               boundingBox = toBoundingBox(
@@ -166,14 +177,14 @@ function createPlugin(app: SignalKApp): SignalKPlugin {
               { lat, lon },
             );
 
-            if (wsManager && wsManager.isConnected && distance > distanceLimit && messageTypes.length > 0) {
+            if (wsManager && connected && distance > distanceLimit && messageTypes.length > 0) {
               oldLon = lon;
               oldLat = lat;
               boundingBox = toBoundingBox(
                 geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
               );
               wsManager.updateBoundingBox(boundingBox);
-            } else if (wsManager && !wsManager.isConnected && !wsManager.isReconnecting && messageTypes.length > 0) {
+            } else if (wsManager && !connected && !wsManager.isReconnecting && messageTypes.length > 0) {
               boundingBox = toBoundingBox(
                 geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
               );
@@ -199,6 +210,7 @@ function createPlugin(app: SignalKApp): SignalKPlugin {
     oldLon = null;
     oldLat = null;
     boundingBox = null;
+    lastPositionCheck = 0;
     app.debug('AisStream Plugin Stopped');
   };
 
