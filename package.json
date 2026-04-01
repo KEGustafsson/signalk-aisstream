@@ -2,9 +2,12 @@
   "name": "signalk-aisstream",
   "version": "0.6.5",
   "description": "Track the worlds vessels (AIS) via websocket. Easy to configure and use.",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "signalk-node-server-plugin",
@@ -18,5 +21,12 @@
     "haversine-distance": "^1.2.1",
     "nmea0183-utilities": "^0.3.3",
     "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@aisstream/aisstream": "^1.0.0",
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.0",
+    "typescript": "^5.4.0",
+    "vitest": "^3.0.0"
   }
 }
