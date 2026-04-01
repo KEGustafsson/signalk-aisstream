@@ -2,3 +2,7 @@ node_modules
 package-lock.json
 .github
 .vscode
+src
+test
+tsconfig.json
+vitest.config.ts
