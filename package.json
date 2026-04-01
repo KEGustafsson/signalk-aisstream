@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
+    "prepare": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepublishOnly": "npm run build"
