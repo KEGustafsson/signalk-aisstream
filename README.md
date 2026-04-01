@@ -63,7 +63,7 @@ test/
 ```
 
 ## Changes
-- v0.7.0, Migrated to TypeScript with strict types, modular architecture, unit tests, and bug fixes
+- v0.7.0, Migrated to TypeScript, modular architecture, unit tests, and bug fixes
 - v0.6.5, new version
 - v0.6.1, fix: webSocket startup delay and hanging connection timeout
 - v0.6.0, fix: webSocket, add exponential backoff reconnect
