@@ -24,10 +24,6 @@ https://aisstream.io/coverage
 ## AisStream.io documentation
 https://aisstream.io/documentation
 
-## Development
-
-This plugin is written in TypeScript with strict type checking (no `any` types).
-
 ### Prerequisites
 - Node.js 18+
 - npm
