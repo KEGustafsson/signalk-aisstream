@@ -4,7 +4,8 @@
   "description": "Track the worlds vessels (AIS) via websocket. Easy to configure and use.",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
     "prepare": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",

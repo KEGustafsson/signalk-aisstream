@@ -24,17 +24,59 @@ https://aisstream.io/coverage
 ## AisStream.io documentation
 https://aisstream.io/documentation
 
-Changes:
-- v0.1.0, First working version
-- v0.2.0, Socket reconnection fixed
-- v0.3.0, WebSocket dependency added
-- v0.4.0, AtoNs added
-- v0.4.1, context typo fix
-- v0.4.2, reconnection improved
-- v0.4.3, reset socket close
-- v0.5.0, ATON & BASE Station improvements/fixes
-- v0.5.1, typo fix
-- v0.6.0, fix: webSocket, add exponential backoff reconnect
-- v0.6.1, fix: webSocket startup delay and hanging connection timeout
-- v0.6.5, new version
+## Development
 
+This plugin is written in TypeScript with strict type checking (no `any` types).
+
+### Prerequisites
+- Node.js 18+
+- npm
+
+### Setup
+```bash
+npm install
+```
+
+### Build
+```bash
+npm run build
+```
+This cleans the `dist/` directory and compiles TypeScript to JavaScript.
+
+### Test
+```bash
+npm test
+```
+
+### Project Structure
+```
+src/
+  index.ts                  # Plugin entry point
+  ais-processor.ts          # AIS message processing and SignalK delta building
+  websocket-manager.ts      # WebSocket connection lifecycle management
+  lookups.ts                # AIS lookup tables (nav status, vessel types, AtoN types)
+  types/
+    aisstream.ts            # AIS wire-format interfaces (PascalCase JSON)
+    signalk.ts              # SignalK app, plugin, delta types
+    nmea0183-utilities.d.ts # Type declaration for untyped dependency
+test/
+  ais-processor.test.ts     # Message processing tests
+  lookups.test.ts           # Lookup table tests
+  fixtures/
+    messages.ts             # Typed test fixtures for all AIS message types
+```
+
+## Changes
+- v0.7.0, Migrated to TypeScript with strict types, modular architecture, unit tests, and bug fixes
+- v0.6.5, new version
+- v0.6.1, fix: webSocket startup delay and hanging connection timeout
+- v0.6.0, fix: webSocket, add exponential backoff reconnect
+- v0.5.1, typo fix
+- v0.5.0, ATON & BASE Station improvements/fixes
+- v0.4.3, reset socket close
+- v0.4.2, reconnection improved
+- v0.4.1, context typo fix
+- v0.4.0, AtoNs added
+- v0.3.0, WebSocket dependency added
+- v0.2.0, Socket reconnection fixed
+- v0.1.0, First working version
