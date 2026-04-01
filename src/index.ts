@@ -130,7 +130,7 @@ function createPlugin(app: SignalKApp): SignalKPlugin {
       subscribe: [
         {
           path: 'navigation.position',
-          period: options.refreshRate * 1000,
+          period: 1000,
         },
       ],
     };
