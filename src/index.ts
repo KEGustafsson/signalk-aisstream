@@ -125,66 +125,87 @@ function createPlugin(app: SignalKApp): SignalKPlugin {
       }
     }
 
-    const localSubscription = {
-      context: 'vessels.self',
-      subscribe: [
-        {
-          path: 'navigation.position',
-          period: options.refreshRate * 1000,
+    function subscribePosition(period: number): void {
+      // Clear any existing subscription
+      unsubscribes.forEach((f) => f());
+      unsubscribes = [];
+
+      const subscription = {
+        context: 'vessels.self',
+        subscribe: [
+          {
+            path: 'navigation.position',
+            period,
+          },
+        ],
+      };
+
+      app.subscriptionmanager.subscribe(
+        subscription,
+        unsubscribes,
+        (subscriptionError) => {
+          app.error('Subscription Error: ' + subscriptionError);
         },
-      ],
-    };
-
-    app.subscriptionmanager.subscribe(
-      localSubscription,
-      unsubscribes,
-      (subscriptionError) => {
-        app.error('Subscription Error: ' + subscriptionError);
-      },
-      (delta) => {
-        if (!delta || !delta.updates) {
-          app.error('Invalid delta received.');
-          return;
-        }
-
-        delta.updates.forEach((u) => {
-          const lon = u.values[0]?.value?.longitude ?? null;
-          const lat = u.values[0]?.value?.latitude ?? null;
-
-          if (lon !== null && lat !== null) {
-            if (oldLon === null && oldLat === null && wsManager && !wsManager.isConnected && messageTypes.length > 0) {
-              oldLon = lon;
-              oldLat = lat;
-              boundingBox = toBoundingBox(
-                geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
-              );
-              wsManager.start(boundingBox);
-            }
-
-            const distance = haversine(
-              { lat: oldLat ?? lat, lon: oldLon ?? lon },
-              { lat, lon },
-            );
-
-            if (wsManager && wsManager.isConnected && distance > distanceLimit && messageTypes.length > 0) {
-              oldLon = lon;
-              oldLat = lat;
-              boundingBox = toBoundingBox(
-                geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
-              );
-              wsManager.updateBoundingBox(boundingBox);
-            } else if (wsManager && !wsManager.isConnected && !wsManager.isReconnecting && messageTypes.length > 0) {
-              boundingBox = toBoundingBox(
-                geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
-              );
-              wsManager.start(boundingBox);
-            } else if (messageTypes.length === 0) {
-              app.debug('No need to update AIS stream');
-            }
+        (delta) => {
+          if (!delta || !delta.updates) {
+            app.error('Invalid delta received.');
+            return;
           }
-        });
-      },
-    );
+
+          delta.updates.forEach((u) => {
+            const lon = u.values[0]?.value?.longitude ?? null;
+            const lat = u.values[0]?.value?.latitude ?? null;
+
+            if (lon !== null && lat !== null) {
+              if (oldLon === null && oldLat === null && wsManager && !wsManager.isConnected && messageTypes.length > 0) {
+                oldLon = lon;
+                oldLat = lat;
+                boundingBox = toBoundingBox(
+                  geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
+                );
+                wsManager.start(boundingBox);
+                // Switch to normal refresh rate now that we're connected
+                if (period !== options.refreshRate * 1000) {
+                  app.debug(`Switching position subscription to ${options.refreshRate}s interval`);
+                  subscribePosition(options.refreshRate * 1000);
+                }
+                return;
+              }
+
+              const distance = haversine(
+                { lat: oldLat ?? lat, lon: oldLon ?? lon },
+                { lat, lon },
+              );
+
+              if (wsManager && wsManager.isConnected && distance > distanceLimit && messageTypes.length > 0) {
+                oldLon = lon;
+                oldLat = lat;
+                boundingBox = toBoundingBox(
+                  geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
+                );
+                wsManager.updateBoundingBox(boundingBox);
+              } else if (wsManager && !wsManager.isConnected && !wsManager.isReconnecting && messageTypes.length > 0) {
+                boundingBox = toBoundingBox(
+                  geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
+                );
+                wsManager.start(boundingBox);
+                // Switch to normal refresh rate once reconnected
+                if (period !== options.refreshRate * 1000) {
+                  app.debug(`Switching position subscription to ${options.refreshRate}s interval`);
+                  subscribePosition(options.refreshRate * 1000);
+                }
+              } else if (messageTypes.length === 0) {
+                app.debug('No need to update AIS stream');
+              }
+            }
+          });
+        },
+      );
+    }
+
+    // Start with fast 1s polling to get position ASAP, then switch to refreshRate
+    const initialPeriod = wsManager.isConnected ? options.refreshRate * 1000 : 1000;
+    subscribePosition(initialPeriod);
   };
 
   plugin.stop = function (): void {
