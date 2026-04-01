@@ -9,8 +9,9 @@ import {
   aidsToNavigationMessage,
   baseStationMessage,
   missingMmsiMessage,
-  missingPositionMessage,
   anchoredVesselMessage,
+  zeroValuesMessage,
+  equatorPrimeMeridianMessage,
 } from './fixtures/messages';
 
 const PLUGIN_ID = 'signalk-aisstream';
@@ -29,8 +30,13 @@ describe('buildSignalKDelta', () => {
       expect(buildSignalKDelta(missingMmsiMessage, PLUGIN_ID)).toBeNull();
     });
 
-    it('returns null when longitude is 0 (falsy)', () => {
-      expect(buildSignalKDelta(missingPositionMessage, PLUGIN_ID)).toBeNull();
+    it('accepts position at 0,0 (equator/prime meridian)', () => {
+      const delta = buildSignalKDelta(equatorPrimeMeridianMessage, PLUGIN_ID);
+      expect(delta).not.toBeNull();
+      expect(findValue(delta, 'navigation.position')).toEqual({
+        longitude: 0,
+        latitude: 0,
+      });
     });
   });
 
@@ -324,6 +330,53 @@ describe('buildSignalKDelta', () => {
     it('uses vessel context prefix (not atons)', () => {
       const delta = buildSignalKDelta(baseStationMessage, PLUGIN_ID);
       expect(delta?.context).toBe('vessels.urn:mrn:imo:mmsi:2190001');
+    });
+  });
+
+  describe('zero-value edge cases', () => {
+    it('includes COG=0 (due north)', () => {
+      const delta = buildSignalKDelta(zeroValuesMessage, PLUGIN_ID);
+      const cog = findValue(delta, 'navigation.courseOverGroundTrue');
+      expect(cog).toBe(0);
+    });
+
+    it('includes SOG=0 (at rest)', () => {
+      const delta = buildSignalKDelta(zeroValuesMessage, PLUGIN_ID);
+      const sog = findValue(delta, 'navigation.speedOverGround');
+      expect(sog).toBe(0);
+    });
+
+    it('includes heading=0 (due north)', () => {
+      const delta = buildSignalKDelta(zeroValuesMessage, PLUGIN_ID);
+      const heading = findValue(delta, 'navigation.headingTrue');
+      expect(heading).toBe(0);
+    });
+
+    it('includes ROT=0 (no turn)', () => {
+      const delta = buildSignalKDelta(zeroValuesMessage, PLUGIN_ID);
+      const rot = findValue(delta, 'navigation.rateOfTurn');
+      expect(rot).toBe(0);
+    });
+
+    it('maps navigational status 0 to motoring', () => {
+      const delta = buildSignalKDelta(zeroValuesMessage, PLUGIN_ID);
+      expect(findValue(delta, 'navigation.state')).toBe('motoring');
+    });
+
+    it('always includes MMSI in delta (no longer conditional)', () => {
+      const delta = buildSignalKDelta(zeroValuesMessage, PLUGIN_ID);
+      const rootValues = delta?.updates[0].values.filter(
+        (v) => v.path === '' && typeof v.value === 'object' && v.value !== null && 'mmsi' in v.value,
+      );
+      expect(rootValues?.length).toBe(1);
+    });
+
+    it('always includes position in delta (no longer conditional)', () => {
+      const delta = buildSignalKDelta(zeroValuesMessage, PLUGIN_ID);
+      expect(findValue(delta, 'navigation.position')).toEqual({
+        longitude: 0.5,
+        latitude: 0.5,
+      });
     });
   });
 });

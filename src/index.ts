@@ -29,6 +29,13 @@ import { AisMessageType } from './types/aisstream';
 import { WebSocketManager, BoundingBox } from './websocket-manager';
 import { buildSignalKDelta } from './ais-processor';
 
+function toBoundingBox(bounds: { latitude: number; longitude: number }[]): BoundingBox {
+  return [
+    { latitude: bounds[0].latitude, longitude: bounds[0].longitude },
+    { latitude: bounds[1].latitude, longitude: bounds[1].longitude },
+  ];
+}
+
 function createPlugin(app: SignalKApp): SignalKPlugin {
   const plugin: SignalKPlugin = {
     id: 'signalk-aisstream',
@@ -118,14 +125,13 @@ function createPlugin(app: SignalKApp): SignalKPlugin {
           const lon = u.values[0]?.value?.longitude ?? null;
           const lat = u.values[0]?.value?.latitude ?? null;
 
-          if (lon && lat) {
-            if (!oldLon && !oldLat && wsManager && !wsManager.isConnected && messageTypes.length > 0) {
+          if (lon !== null && lat !== null) {
+            if (oldLon === null && oldLat === null && wsManager && !wsManager.isConnected && messageTypes.length > 0) {
               oldLon = lon;
               oldLat = lat;
-              boundingBox = geolib.getBoundsOfDistance(
-                { lat, lon },
-                options.boundingBoxSize * 1000,
-              ) as unknown as BoundingBox;
+              boundingBox = toBoundingBox(
+                geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
+              );
               wsManager.start(boundingBox);
             }
 
@@ -135,16 +141,16 @@ function createPlugin(app: SignalKApp): SignalKPlugin {
             );
 
             if (wsManager && wsManager.isConnected && distance > distanceLimit && messageTypes.length > 0) {
-              boundingBox = geolib.getBoundsOfDistance(
-                { lat, lon },
-                options.boundingBoxSize * 1000,
-              ) as unknown as BoundingBox;
+              oldLon = lon;
+              oldLat = lat;
+              boundingBox = toBoundingBox(
+                geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
+              );
               wsManager.updateBoundingBox(boundingBox);
             } else if (wsManager && !wsManager.isConnected && !wsManager.isReconnecting && messageTypes.length > 0) {
-              boundingBox = geolib.getBoundsOfDistance(
-                { lat, lon },
-                options.boundingBoxSize * 1000,
-              ) as unknown as BoundingBox;
+              boundingBox = toBoundingBox(
+                geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
+              );
               wsManager.start(boundingBox);
             } else if (messageTypes.length === 0) {
               app.debug('No need to update AIS stream');

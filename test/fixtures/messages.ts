@@ -300,6 +300,70 @@ export const missingPositionMessage: AisStreamMessage = {
   },
 };
 
+export const zeroValuesMessage: AisStreamMessage = {
+  MetaData: {
+    MMSI: 211234568,
+    longitude: 0.5,
+    latitude: 0.5,
+    time_utc: '2024-03-15T17:00:00Z',
+    ShipName: 'ZERO VALUES',
+  },
+  MessageType: 'PositionReport',
+  Message: {
+    PositionReport: {
+      MessageID: 1,
+      RepeatIndicator: 0,
+      UserID: 211234568,
+      Valid: true,
+      NavigationalStatus: 0,
+      RateOfTurn: 0,
+      Sog: 0,
+      Cog: 0,
+      TrueHeading: 0,
+      Longitude: 0.5,
+      Latitude: 0.5,
+      PositionAccuracy: true,
+      Timestamp: 0,
+      Raim: false,
+      SpecialManoeuvreIndicator: 0,
+      CommunicationState: 0,
+      Spare: 0,
+    },
+  },
+};
+
+export const equatorPrimeMeridianMessage: AisStreamMessage = {
+  MetaData: {
+    MMSI: 211234569,
+    longitude: 0,
+    latitude: 0,
+    time_utc: '2024-03-15T17:00:00Z',
+    ShipName: 'EQUATOR VESSEL',
+  },
+  MessageType: 'PositionReport',
+  Message: {
+    PositionReport: {
+      MessageID: 1,
+      RepeatIndicator: 0,
+      UserID: 211234569,
+      Valid: true,
+      NavigationalStatus: 0,
+      RateOfTurn: 0,
+      Sog: 5.0,
+      Cog: 90.0,
+      TrueHeading: 90,
+      Longitude: 0,
+      Latitude: 0,
+      PositionAccuracy: true,
+      Timestamp: 0,
+      Raim: false,
+      SpecialManoeuvreIndicator: 0,
+      CommunicationState: 0,
+      Spare: 0,
+    },
+  },
+};
+
 export const anchoredVesselMessage: AisStreamMessage = {
   MetaData: {
     MMSI: 211234567,

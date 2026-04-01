@@ -19,7 +19,11 @@ export function buildSignalKDelta(
   const longitude = data.MetaData?.longitude;
   const latitude = data.MetaData?.latitude;
 
-  if (!mmsi || !longitude || !latitude) {
+  if (
+    mmsi === undefined || mmsi === null || mmsi === 0 ||
+    longitude === undefined || longitude === null ||
+    latitude === undefined || latitude === null
+  ) {
     return null;
   }
 
@@ -53,10 +57,7 @@ export function buildSignalKDelta(
   }
 
   const shipType = msg.ShipStaticData?.Type;
-  const destination =
-    msg.ShipStaticData?.Destination ?? msg.StaticDataReport?.ReportB?.CallSign
-      ? msg.ShipStaticData?.Destination
-      : undefined;
+  const destination = msg.ShipStaticData?.Destination;
   const imoNumber = msg.ShipStaticData?.ImoNumber;
   const callSign =
     msg.ShipStaticData?.CallSign ?? msg.StaticDataReport?.ReportB?.CallSign;
@@ -97,15 +98,11 @@ export function buildSignalKDelta(
 
   const values: SignalKDeltaValue[] = [];
 
-  if (mmsi) {
-    values.push({ path: '', value: { mmsi } });
-  }
+  values.push({ path: '', value: { mmsi } });
 
-  if (longitude && latitude) {
-    values.push({ path: 'navigation.position', value: { longitude, latitude } });
-  }
+  values.push({ path: 'navigation.position', value: { longitude, latitude } });
 
-  if (cog) {
+  if (cog !== undefined && cog !== null) {
     values.push({
       path: 'navigation.courseOverGroundTrue',
       value: transform(cog, 'deg', 'rad'),
@@ -116,21 +113,21 @@ export function buildSignalKDelta(
     });
   }
 
-  if (sog) {
+  if (sog !== undefined && sog !== null) {
     values.push({
       path: 'navigation.speedOverGround',
       value: transform(sog, 'knots', 'ms'),
     });
   }
 
-  if (rot) {
+  if (rot !== undefined && rot !== null) {
     values.push({
       path: 'navigation.rateOfTurn',
       value: transform(rot, 'deg', 'rad'),
     });
   }
 
-  if (heading) {
+  if (heading !== undefined && heading !== null) {
     values.push({
       path: 'navigation.headingTrue',
       value: transform(heading, 'deg', 'rad'),

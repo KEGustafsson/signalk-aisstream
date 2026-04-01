@@ -125,7 +125,7 @@ export class WebSocketManager {
 
     this.socket.addEventListener('message', (event) => {
       try {
-        const aisMessage = JSON.parse(event.data as string) as AisStreamMessage;
+        const aisMessage = JSON.parse(String(event.data)) as AisStreamMessage;
         this.callbacks.onMessage(aisMessage);
         this.resetWatchdog();
         this.reconnectDelay = INITIAL_RECONNECT_DELAY;
@@ -178,7 +178,6 @@ export class WebSocketManager {
       if (this.socket) {
         this.clearReconnectTimer();
         this.reconnectDelay = INITIAL_RECONNECT_DELAY;
-        this.socket.close();
         this.socket.terminate();
         this.socket = null;
         this.callbacks.onDebug(
