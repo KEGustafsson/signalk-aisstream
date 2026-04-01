@@ -36,6 +36,15 @@ function toBoundingBox(bounds: { latitude: number; longitude: number }[]): Bound
   ];
 }
 
+function isValidPosition(value: unknown): value is { latitude: number; longitude: number } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Record<string, unknown>).latitude === 'number' &&
+    typeof (value as Record<string, unknown>).longitude === 'number'
+  );
+}
+
 function createPlugin(app: SignalKApp): SignalKPlugin {
   const plugin: SignalKPlugin = {
     id: 'signalk-aisstream',
@@ -98,6 +107,23 @@ function createPlugin(app: SignalKApp): SignalKPlugin {
         onError: (msg) => app.error(msg),
       },
     );
+
+    // Attempt immediate start using current position if available
+    if (app.getSelfPath && messageTypes.length > 0) {
+      const position = app.getSelfPath('navigation.position');
+      if (isValidPosition(position)) {
+        app.debug('Position available at startup, starting WebSocket immediately');
+        oldLon = position.longitude;
+        oldLat = position.latitude;
+        boundingBox = toBoundingBox(
+          geolib.getBoundsOfDistance(
+            { lat: position.latitude, lon: position.longitude },
+            options.boundingBoxSize * 1000,
+          ),
+        );
+        wsManager.start(boundingBox);
+      }
+    }
 
     const localSubscription = {
       context: 'vessels.self',
