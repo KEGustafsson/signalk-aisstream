@@ -30,18 +30,16 @@ export interface SignalKDelta {
 }
 
 export interface SignalKPositionValue {
-  value: {
-    longitude: number;
-    latitude: number;
-  };
+  path?: string;
+  value?: unknown;
 }
 
 export interface SignalKPositionUpdate {
-  values: SignalKPositionValue[];
+  values?: SignalKPositionValue[];
 }
 
 export interface SignalKPositionDelta {
-  updates: SignalKPositionUpdate[];
+  updates?: SignalKPositionUpdate[];
 }
 
 export interface SignalKSubscription {

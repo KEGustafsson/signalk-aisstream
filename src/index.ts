@@ -45,6 +45,30 @@ function isValidPosition(value: unknown): value is { latitude: number; longitude
   );
 }
 
+function findPositionValue(update: unknown): { latitude: number; longitude: number } | null {
+  if (typeof update !== 'object' || update === null) {
+    return null;
+  }
+
+  const values = (update as { values?: unknown }).values;
+  if (!Array.isArray(values)) {
+    return null;
+  }
+
+  for (const entry of values) {
+    if (typeof entry !== 'object' || entry === null) {
+      continue;
+    }
+
+    const { path, value } = entry as { path?: unknown; value?: unknown };
+    if ((path === undefined || path === 'navigation.position') && isValidPosition(value)) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
 function createPlugin(app: SignalKApp): SignalKPlugin {
   const plugin: SignalKPlugin = {
     id: 'signalk-aisstream',
@@ -147,56 +171,59 @@ function createPlugin(app: SignalKApp): SignalKPlugin {
           app.error('Subscription Error: ' + subscriptionError);
         },
         (delta) => {
-          if (!delta || !delta.updates) {
+          if (!delta || !Array.isArray(delta.updates)) {
             app.error('Invalid delta received.');
             return;
           }
 
           delta.updates.forEach((u) => {
-            const lon = u.values[0]?.value?.longitude ?? null;
-            const lat = u.values[0]?.value?.latitude ?? null;
+            const position = findPositionValue(u);
+            if (!position) {
+              return;
+            }
 
-            if (lon !== null && lat !== null) {
-              if (oldLon === null && oldLat === null && wsManager && !wsManager.isConnected && messageTypes.length > 0) {
-                oldLon = lon;
-                oldLat = lat;
-                boundingBox = toBoundingBox(
-                  geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
-                );
-                wsManager.start(boundingBox);
-                // Switch to normal refresh rate now that we're connected
-                if (period !== options.refreshRate * 1000) {
-                  app.debug(`Switching position subscription to ${options.refreshRate}s interval`);
-                  subscribePosition(options.refreshRate * 1000);
-                }
-                return;
-              }
+            const lon = position.longitude;
+            const lat = position.latitude;
 
-              const distance = haversine(
-                { lat: oldLat ?? lat, lon: oldLon ?? lon },
-                { lat, lon },
+            if (oldLon === null && oldLat === null && wsManager && !wsManager.isConnected && messageTypes.length > 0) {
+              oldLon = lon;
+              oldLat = lat;
+              boundingBox = toBoundingBox(
+                geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
               );
-
-              if (wsManager && wsManager.isConnected && distance > distanceLimit && messageTypes.length > 0) {
-                oldLon = lon;
-                oldLat = lat;
-                boundingBox = toBoundingBox(
-                  geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
-                );
-                wsManager.updateBoundingBox(boundingBox);
-              } else if (wsManager && !wsManager.isConnected && !wsManager.isReconnecting && messageTypes.length > 0) {
-                boundingBox = toBoundingBox(
-                  geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
-                );
-                wsManager.start(boundingBox);
-                // Switch to normal refresh rate once reconnected
-                if (period !== options.refreshRate * 1000) {
-                  app.debug(`Switching position subscription to ${options.refreshRate}s interval`);
-                  subscribePosition(options.refreshRate * 1000);
-                }
-              } else if (messageTypes.length === 0) {
-                app.debug('No need to update AIS stream');
+              wsManager.start(boundingBox);
+              // Switch to normal refresh rate now that we're connected
+              if (period !== options.refreshRate * 1000) {
+                app.debug(`Switching position subscription to ${options.refreshRate}s interval`);
+                subscribePosition(options.refreshRate * 1000);
               }
+              return;
+            }
+
+            const distance = haversine(
+              { lat: oldLat ?? lat, lon: oldLon ?? lon },
+              { lat, lon },
+            );
+
+            if (wsManager && wsManager.isConnected && distance > distanceLimit && messageTypes.length > 0) {
+              oldLon = lon;
+              oldLat = lat;
+              boundingBox = toBoundingBox(
+                geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
+              );
+              wsManager.updateBoundingBox(boundingBox);
+            } else if (wsManager && !wsManager.isConnected && !wsManager.isReconnecting && messageTypes.length > 0) {
+              boundingBox = toBoundingBox(
+                geolib.getBoundsOfDistance({ lat, lon }, options.boundingBoxSize * 1000),
+              );
+              wsManager.start(boundingBox);
+              // Switch to normal refresh rate once reconnected
+              if (period !== options.refreshRate * 1000) {
+                app.debug(`Switching position subscription to ${options.refreshRate}s interval`);
+                subscribePosition(options.refreshRate * 1000);
+              }
+            } else if (messageTypes.length === 0) {
+              app.debug('No need to update AIS stream');
             }
           });
         },
@@ -291,4 +318,4 @@ function createPlugin(app: SignalKApp): SignalKPlugin {
   return plugin;
 }
 
-module.exports = createPlugin;
+export = createPlugin;
