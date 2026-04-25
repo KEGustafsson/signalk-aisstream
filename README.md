@@ -63,6 +63,7 @@ test/
 ```
 
 ## Changes
+- v0.8.0, guard position subscription delta handling
 - v0.7.2, Dynamic reconnection at startup
 - v0.7.1, WebSocket startup fix
 - v0.7.0, Migrated to TypeScript, modular architecture, unit tests, and bug fixes
