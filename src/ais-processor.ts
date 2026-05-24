@@ -123,7 +123,7 @@ export function buildSignalKDelta(
   if (rot !== undefined && rot !== null) {
     values.push({
       path: 'navigation.rateOfTurn',
-      value: transform(rot, 'deg', 'rad'),
+      value: transform(rot, 'deg', 'rad') / 60,
     });
   }
 

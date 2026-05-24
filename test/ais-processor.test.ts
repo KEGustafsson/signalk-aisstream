@@ -86,12 +86,12 @@ describe('buildSignalKDelta', () => {
       expect(sog).toBeCloseTo(6.43, 1);
     });
 
-    it('converts rate of turn from degrees to radians', () => {
+    it('converts rate of turn from deg/min to rad/s', () => {
       const delta = buildSignalKDelta(positionReportMessage, PLUGIN_ID);
       const rot = findValue(delta, 'navigation.rateOfTurn');
       expect(typeof rot).toBe('number');
-      // 5 deg ≈ 0.0873 rad
-      expect(rot).toBeCloseTo(0.0873, 3);
+      // 5 deg/min = 5 * (π/180) / 60 ≈ 0.001454 rad/s
+      expect(rot).toBeCloseTo(0.001454, 6);
     });
 
     it('converts heading from degrees to radians', () => {
