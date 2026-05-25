@@ -15,8 +15,8 @@ describe('navigationalStatus', () => {
     expect(navigationalStatus[5]).toBe('moored');
     expect(navigationalStatus[7]).toBe('fishing');
     expect(navigationalStatus[8]).toBe('sailing');
-    expect(navigationalStatus[14]).toBe('ais-sart');
-    expect(navigationalStatus[15]).toBe('default');
+    expect(navigationalStatus[14]).toBe('Reserved for future use-14');
+    expect(navigationalStatus[15]).toBe('not defined (example)');
   });
 
   it('returns undefined for unknown keys', () => {

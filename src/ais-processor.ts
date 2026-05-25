@@ -141,7 +141,7 @@ export function buildSignalKDelta(
   if (navStatus !== undefined && navStatus !== null) {
     values.push({
       path: 'navigation.state',
-      value: navigationalStatus[navStatus] ?? 'default',
+      value: navigationalStatus[navStatus] ?? 'not defined (example)',
     });
   }
 

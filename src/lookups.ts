@@ -13,13 +13,13 @@ export const navigationalStatus: Record<number, string> = {
   6: 'aground',
   7: 'fishing',
   8: 'sailing',
-  9: 'hazardous material high speed',
-  10: 'IMO hazard',
-  11: 'power-driven vessel towing astern',
-  12: 'power-driven vessel pushing ahead or towing alongside',
-  13: 'reserved for future use',
-  14: 'ais-sart',
-  15: 'default',
+  9: 'Reserved for future amendment of Navigational Status for HSC',
+  10: 'Reserved for future amendment of Navigational Status for WIG',
+  11: 'Reserved for future use-11',
+  12: 'Reserved for future use-12',
+  13: 'Reserved for future use-13',
+  14: 'Reserved for future use-14',
+  15: 'not defined (example)',
 };
 
 export const vesselType: Record<number, string> = {
