@@ -138,6 +138,17 @@ describe('buildSignalKDelta', () => {
     });
   });
 
+  describe('reserved navigational status (11-13)', () => {
+    it('omits navigation.state for unmapped status codes', () => {
+      const msg = structuredClone(positionReportMessage);
+      if (msg.Message.PositionReport) {
+        msg.Message.PositionReport.NavigationalStatus = 11;
+      }
+      const delta = buildSignalKDelta(msg, PLUGIN_ID);
+      expect(findValue(delta, 'navigation.state')).toBeUndefined();
+    });
+  });
+
   describe('ShipStaticData (Type 5)', () => {
     it('includes ship type with id and name', () => {
       const delta = buildSignalKDelta(shipStaticDataMessage, PLUGIN_ID);

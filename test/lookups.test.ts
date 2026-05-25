@@ -2,11 +2,17 @@ import { describe, it, expect } from 'vitest';
 import { navigationalStatus, vesselType, atonType } from '../src/lookups';
 
 describe('navigationalStatus', () => {
-  it('maps all 16 status codes (0-15)', () => {
-    for (let i = 0; i <= 15; i++) {
+  it('maps defined status codes to strings', () => {
+    for (const i of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 14, 15]) {
       expect(navigationalStatus[i]).toBeDefined();
       expect(typeof navigationalStatus[i]).toBe('string');
     }
+  });
+
+  it('leaves reserved codes 11-13 unmapped', () => {
+    expect(navigationalStatus[11]).toBeUndefined();
+    expect(navigationalStatus[12]).toBeUndefined();
+    expect(navigationalStatus[13]).toBeUndefined();
   });
 
   it('has correct key values', () => {
@@ -15,8 +21,10 @@ describe('navigationalStatus', () => {
     expect(navigationalStatus[5]).toBe('moored');
     expect(navigationalStatus[7]).toBe('fishing');
     expect(navigationalStatus[8]).toBe('sailing');
-    expect(navigationalStatus[14]).toBe('Reserved for future use-14');
-    expect(navigationalStatus[15]).toBe('not defined (example)');
+    expect(navigationalStatus[9]).toBe('hazardous material high speed');
+    expect(navigationalStatus[10]).toBe('hazardous material wing in ground');
+    expect(navigationalStatus[14]).toBe('ais-sart');
+    expect(navigationalStatus[15]).toBe('default');
   });
 
   it('returns undefined for unknown keys', () => {

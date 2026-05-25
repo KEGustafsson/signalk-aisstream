@@ -138,10 +138,14 @@ export function buildSignalKDelta(
     values.push({ path: 'navigation.datetime', value: datetime });
   }
 
-  if (navStatus !== undefined && navStatus !== null) {
+  if (
+    navStatus !== undefined &&
+    navStatus !== null &&
+    navigationalStatus[navStatus] !== undefined
+  ) {
     values.push({
       path: 'navigation.state',
-      value: navigationalStatus[navStatus] ?? 'not defined (example)',
+      value: navigationalStatus[navStatus],
     });
   }
 
