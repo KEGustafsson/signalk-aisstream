@@ -52,7 +52,7 @@ describe('buildSignalKDelta', () => {
       const mmsiValue = rootValues?.find(
         (v) => typeof v.value === 'object' && v.value !== null && 'mmsi' in v.value,
       );
-      expect(mmsiValue?.value).toEqual({ mmsi: 211234560 });
+      expect(mmsiValue?.value).toEqual({ mmsi: '211234560' });
     });
 
     it('includes position from MetaData', () => {

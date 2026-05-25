@@ -98,7 +98,7 @@ export function buildSignalKDelta(
 
   const values: SignalKDeltaValue[] = [];
 
-  values.push({ path: '', value: { mmsi } });
+  values.push({ path: '', value: { mmsi: String(mmsi) } });
 
   values.push({ path: 'navigation.position', value: { longitude, latitude } });
 

@@ -5,7 +5,7 @@
 export interface SignalKDeltaValue {
   path: string;
   value:
-    | { mmsi: number }
+    | { mmsi: string }
     | { longitude: number; latitude: number }
     | { name: string }
     | { registrations: { imo: string } }
