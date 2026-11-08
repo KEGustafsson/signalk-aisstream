@@ -143,6 +143,25 @@ describe('buildSignalKDelta', () => {
       expect(findValue(delta, 'navigation.datetime')).toBe('2024-03-15T12:30:00.000Z');
     });
 
+    it('uses the AIS report time as the delta update timestamp', () => {
+      const delta = buildSignalKDelta(positionReportMessage, PLUGIN_ID);
+      expect(delta?.updates[0].timestamp).toBe('2024-03-15T12:30:00.000Z');
+    });
+
+    it('falls back to receipt time when the AIS report time is missing', () => {
+      const msg = structuredClone(positionReportMessage);
+      msg.MetaData.time_utc = '';
+
+      const before = Date.now();
+      const delta = buildSignalKDelta(msg, PLUGIN_ID);
+      const after = Date.now();
+      const timestamp = Date.parse(delta?.updates[0].timestamp ?? '');
+
+      expect(timestamp).toBeGreaterThanOrEqual(before);
+      expect(timestamp).toBeLessThanOrEqual(after);
+      expect(findValue(delta, 'navigation.datetime')).toBeUndefined();
+    });
+
     it('sets source label to plugin ID', () => {
       const delta = buildSignalKDelta(positionReportMessage, PLUGIN_ID);
       expect(delta?.updates[0].source.label).toBe(PLUGIN_ID);

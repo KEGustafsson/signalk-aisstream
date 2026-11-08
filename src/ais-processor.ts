@@ -15,6 +15,14 @@ function isValidTrueHeading(heading: number): boolean {
   return heading >= 0 && heading < 360;
 }
 
+function parseAisTimestamp(timeUtc: string | undefined): Date | undefined {
+  if (!timeUtc) {
+    return undefined;
+  }
+  const timestamp = new Date(timeUtc);
+  return Number.isNaN(timestamp.getTime()) ? undefined : timestamp;
+}
+
 export function buildSignalKDelta(
   data: AisStreamMessage,
   pluginId: string,
@@ -88,11 +96,14 @@ export function buildSignalKDelta(
     aisClass = 'B';
   }
 
-  const datetime = new Date(timeUtc).toISOString().replace(/\.\d{3}Z$/, '.000Z');
+  const reportTime = parseAisTimestamp(timeUtc);
+  const datetime = reportTime
+    ?.toISOString()
+    .replace(/\.\d{3}Z$/, '.000Z');
 
   let etaISO: string | undefined;
-  if (eta) {
-    const etaDate = new Date(timeUtc);
+  if (eta && reportTime) {
+    const etaDate = new Date(reportTime);
     etaDate.setUTCMonth(etaDate.getUTCMonth() + eta.Month);
     etaDate.setUTCDate(etaDate.getUTCDate() + eta.Day);
     etaDate.setUTCHours(etaDate.getUTCHours() + eta.Hour);
@@ -138,7 +149,7 @@ export function buildSignalKDelta(
     });
   }
 
-  if (timeUtc) {
+  if (reportTime && datetime) {
     values.push({ path: 'navigation.datetime', value: datetime });
   }
 
@@ -231,7 +242,7 @@ export function buildSignalKDelta(
     updates: [
       {
         source: { label: pluginId },
-        timestamp: new Date().toISOString(),
+        timestamp: reportTime?.toISOString() ?? new Date().toISOString(),
         values,
       },
     ],
