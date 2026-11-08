@@ -149,7 +149,7 @@ export function buildSignalKDelta(
     });
   }
 
-  if (reportTime && datetime) {
+  if (datetime) {
     values.push({ path: 'navigation.datetime', value: datetime });
   }
 

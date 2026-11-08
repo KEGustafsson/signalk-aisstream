@@ -162,6 +162,30 @@ describe('buildSignalKDelta', () => {
       expect(findValue(delta, 'navigation.datetime')).toBeUndefined();
     });
 
+    it('parses the AISStream time_utc format for timestamp and datetime', () => {
+      const msg = structuredClone(positionReportMessage);
+      msg.MetaData.time_utc = '2024-03-15 12:30:05.318353123 +0000 UTC';
+
+      const delta = buildSignalKDelta(msg, PLUGIN_ID);
+      expect(delta?.updates[0].timestamp).toBe('2024-03-15T12:30:05.318Z');
+      expect(findValue(delta, 'navigation.datetime')).toBe('2024-03-15T12:30:05.000Z');
+    });
+
+    it('falls back to receipt time when the AIS report time is unparseable', () => {
+      const msg = structuredClone(shipStaticDataMessage);
+      msg.MetaData.time_utc = 'not a date';
+
+      const before = Date.now();
+      const delta = buildSignalKDelta(msg, PLUGIN_ID);
+      const after = Date.now();
+      const timestamp = Date.parse(delta?.updates[0].timestamp ?? '');
+
+      expect(timestamp).toBeGreaterThanOrEqual(before);
+      expect(timestamp).toBeLessThanOrEqual(after);
+      expect(findValue(delta, 'navigation.datetime')).toBeUndefined();
+      expect(findValue(delta, 'navigation.destination.eta')).toBeUndefined();
+    });
+
     it('sets source label to plugin ID', () => {
       const delta = buildSignalKDelta(positionReportMessage, PLUGIN_ID);
       expect(delta?.updates[0].source.label).toBe(PLUGIN_ID);

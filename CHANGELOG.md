@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Use the AIS report time (`MetaData.time_utc`) as the delta update timestamp instead of the local receipt time, so delayed AISStream data no longer looks newer than local AIS sources in Signal K source arbitration. Falls back to receipt time when `time_utc` is missing or invalid.
+- Messages with a missing or unparseable `time_utc` no longer throw; they are delivered without `navigation.datetime` and ETA.
+
 ## [0.9.1] - 2026-08-07
 
 ### Changed
