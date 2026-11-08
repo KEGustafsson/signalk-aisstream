@@ -65,6 +65,7 @@ test/
 ```
 
 ## Changes
+- v0.10.0, use AIS report time for delta update timestamp
 - v0.9.1, documentation and package metadata updates
 - v0.9.0, Signal K App Store metadata, reusable CI workflow, and AIS true heading validation
 - v0.8.0, guard position subscription delta handling
